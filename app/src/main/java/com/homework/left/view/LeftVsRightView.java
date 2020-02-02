@@ -1,4 +1,4 @@
-package com.whale.nangua.pumpkingobang.view;
+package com.homework.left.view;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -7,37 +7,37 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Paint.Style;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.whale.nangua.pumpkingobang.R;
+import com.homework.left.R;
 
-public class GobangView extends View {
-    protected static int GRID_SIZE = 14;    //设置为国际标准
-    protected static int GRID_WIDTH = 42; // 棋盘格的宽度
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Stack;
+
+public class LeftVsRightView extends View {
+    protected static int GRID_SIZE = 20;    //设置为国际标准
+    protected static int GRID_WIDTH = 50; // 棋盘格的宽度
     protected static int CHESS_DIAMETER = 37; // 棋的直径
     protected static int mStartX;// 棋盘定位的左上角X
     protected static int mStartY;// 棋盘定位的左上角Y
 
     private static int[][] mGridArray; // 网格
+    private Stack<String> storageArray;
 
 
     int wbflag = 1; //该下白棋了=2，该下黑棋了=1. 这里先下黑棋（黑棋以后设置为机器自动下的棋子）
-    int mLevel = 1; //游戏难度
     int mWinFlag = 0;
     private final int BLACK = 1;
     private final int WHITE = 2;
+    private boolean mIsWin = false;
 
-    int mGameState = GAMESTATE_RUN; //游戏阶段：0=尚未游戏，1=正在进行游戏，2=游戏结束
-    static final int GAMESTATE_PRE = 0;
-    static final int GAMESTATE_RUN = 1;
-    static final int GAMESTATE_PAUSE = 2;
-    static final int GAMESTATE_END = 3;
 
     //private TextView mStatusTextView; //  根据游戏状态设置显示的文字
     private TextView mStatusTextView; //  根据游戏状态设置显示的文字
@@ -46,11 +46,11 @@ public class GobangView extends View {
     private final Paint mPaint = new Paint();
 
     CharSequence mText;
-    CharSequence STRING_WIN = "白棋赢啦! /n Press Fire Key to start new game.";
-    CharSequence STRING_LOSE = "黑棋赢啦! /n Press Fire Key to start new game.";
-    CharSequence STRING_EQUAL = "和棋！ /n Press Fire Key to start new Game.";
+    CharSequence STRING_WIN = "白棋赢啦!  ";
+    CharSequence STRING_LOSE = "黑棋赢啦!  ";
+    CharSequence STRING_EQUAL = "和棋！  ";
 
-    public GobangView(Context context, AttributeSet attrs) {
+    public LeftVsRightView(Context context, AttributeSet attrs) {
         super(context, attrs);
         this.setFocusable(true);
         this.setFocusableInTouchMode(true);
@@ -63,8 +63,8 @@ public class GobangView extends View {
 
     // 初始化黑白棋的Bitmap
     public void init() {
+        storageArray = new Stack<>();
         myButtonListener = new MyButtonListener();
-        mGameState = 1; //设置游戏为开始状态
         wbflag = BLACK; //初始为先下黑棋
         mWinFlag = 0; //清空输赢标志。
         mGridArray = new int[GRID_SIZE - 1][GRID_SIZE - 1];
@@ -82,8 +82,10 @@ public class GobangView extends View {
         //mStatusTextView.setVisibility(View.INVISIBLE);
     }
 
-    Button huiqi;
-    Button refresh;
+    //悔棋按钮
+    private Button huiqi;
+    //刷新那妞
+    private Button refresh;
 
     //设置两个按钮
     public void setButtons(Button huiqi, Button refresh) {
@@ -99,65 +101,61 @@ public class GobangView extends View {
         mStartY = h / 2 - GRID_SIZE * GRID_WIDTH / 2;
     }
 
+    /**
+     * 点下出现棋子
+     * @param event
+     * @return
+     */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        switch (mGameState) {
-            case GAMESTATE_PRE:
-                break;
-            case GAMESTATE_RUN: {
-                int x;
-                int y;
-                float x0 = GRID_WIDTH - (event.getX() - mStartX) % GRID_WIDTH;
-                float y0 = GRID_WIDTH - (event.getY() - mStartY) % GRID_WIDTH;
-                if (x0 < GRID_WIDTH / 2) {
-                    x = (int) ((event.getX() - mStartX) / GRID_WIDTH);
-                } else {
-                    x = (int) ((event.getX() - mStartX) / GRID_WIDTH) - 1;
-                }
-                if (y0 < GRID_WIDTH / 2) {
-                    y = (int) ((event.getY() - mStartY) / GRID_WIDTH);
-                } else {
-                    y = (int) ((event.getY() - mStartY) / GRID_WIDTH) - 1;
-                }
-                if ((x >= 0 && x < GRID_SIZE - 1)
-                        && (y >= 0 && y < GRID_SIZE - 1)) {
-                    if (mGridArray[x][y] == 0) {
-                        if (wbflag == BLACK) {
-                            putChess(x, y, BLACK);
-                            //this.mGridArray[x][y] = 1;
-                            if (checkWin(BLACK)) { //如果是黑棋赢了
-                                mText = STRING_LOSE;
-                                mGameState = GAMESTATE_END;
-                                showTextView(mText);
-                            } else if (checkFull()) {//如果棋盘满了
-                                mText = STRING_EQUAL;
-                                mGameState = GAMESTATE_END;
-                                showTextView(mText);
-                            }
-                            wbflag = WHITE;
-                        } else if (wbflag == WHITE) {
-                            putChess(x, y, WHITE);
-                            //this.mGridArray[x][y] = 2;
-                            if (checkWin(WHITE)) {
-                                mText = STRING_WIN;
-                                mGameState = GAMESTATE_END;
-                                showTextView(mText);
-                            } else if (checkFull()) {//如果棋盘满了
-                                mText = STRING_EQUAL;
-                                mGameState = GAMESTATE_END;
-                                showTextView(mText);
-                            }
-                            wbflag = BLACK;
-                        }
+        if (mIsWin) {
+            return true;
+        }
+        int x;
+        int y;
+        float x0 = GRID_WIDTH - (event.getX() - mStartX) % GRID_WIDTH;
+        float y0 = GRID_WIDTH - (event.getY() - mStartY) % GRID_WIDTH;
+        if (x0 < GRID_WIDTH / 2) {
+            x = (int) ((event.getX() - mStartX) / GRID_WIDTH);
+        } else {
+            x = (int) ((event.getX() - mStartX) / GRID_WIDTH) - 1;
+        }
+        if (y0 < GRID_WIDTH / 2) {
+            y = (int) ((event.getY() - mStartY) / GRID_WIDTH);
+        } else {
+            y = (int) ((event.getY() - mStartY) / GRID_WIDTH) - 1;
+        }
+        if ((x >= 0 && x < GRID_SIZE - 1)
+                && (y >= 0 && y < GRID_SIZE - 1)) {
+            if (mGridArray[x][y] == 0) {
+                if (wbflag == BLACK) {
+                    putChess(x, y, BLACK);
+                    //this.mGridArray[x][y] = 1;
+                    if (checkWin(BLACK)) { //如果是黑棋赢了
+                        mText = STRING_LOSE;
+                        showTextView(mText);
+                        mIsWin = true;
+                        Toast.makeText(LeftVsRightView.this.getContext(), "黑棋赢了!!!", Toast.LENGTH_LONG).show();
+                    } else if (checkFull()) {//如果棋盘满了
+                        mText = STRING_EQUAL;
+                        showTextView(mText);
                     }
+                    wbflag = WHITE;
+                } else if (wbflag == WHITE) {
+                    putChess(x, y, WHITE);
+                    //this.mGridArray[x][y] = 2;
+                    if (checkWin(WHITE)) {
+                        mText = STRING_WIN;
+                        showTextView(mText);
+                        mIsWin = true;
+                        Toast.makeText(LeftVsRightView.this.getContext(), "白棋赢了!!!", Toast.LENGTH_LONG).show();
+                    } else if (checkFull()) {//如果棋盘满了
+                        mText = STRING_EQUAL;
+                        showTextView(mText);
+                    }
+                    wbflag = BLACK;
                 }
             }
-
-            break;
-            case GAMESTATE_PAUSE:
-                break;
-            case GAMESTATE_END:
-                break;
         }
 
         this.invalidate();
@@ -170,13 +168,13 @@ public class GobangView extends View {
         //canvas.drawColor(Color.YELLOW);
         //先画实木背景
         Paint paintBackground = new Paint();
-        Bitmap bitmap = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.chess_background);
+        Bitmap bitmap = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.chess_bg);
         canvas.drawBitmap(bitmap, null, new Rect(mStartX, mStartY, mStartX + GRID_WIDTH * GRID_SIZE, mStartY + GRID_WIDTH * GRID_SIZE), paintBackground);
         // 画棋盘
         Paint paintRect = new Paint();
         paintRect.setColor(Color.BLACK);
         paintRect.setStrokeWidth(2);
-        paintRect.setStyle(Style.STROKE);
+        paintRect.setStyle(Paint.Style.STROKE);
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 int mLeft = i * GRID_WIDTH + mStartX;
@@ -218,6 +216,9 @@ public class GobangView extends View {
 
     public void putChess(int x, int y, int blackwhite) {
         mGridArray[x][y] = blackwhite;
+        String temp = x + ":" + y;
+        storageArray.push(temp);
+
     }
 
     public boolean checkWin(int wbflag) {
@@ -253,6 +254,10 @@ public class GobangView extends View {
             return false;
     }
 
+    /**
+     * 检查棋盘是否满了
+     * @return
+     */
     public boolean checkFull() {
         int mNotEmpty = 0;
         for (int i = 0; i < GRID_SIZE - 1; i++)
@@ -260,15 +265,15 @@ public class GobangView extends View {
                 if (mGridArray[i][j] != 0) mNotEmpty += 1;
             }
 
-        if (mNotEmpty == (GRID_SIZE - 1) * (GRID_SIZE - 1)) return true;
-        else return false;
+        if (mNotEmpty == (GRID_SIZE - 1) * (GRID_SIZE - 1)) {
+            return true;
+        } else return false;
     }
 
     public void showTextView(CharSequence mT) {
         this.mStatusTextView.setText(mT);
         mStatusTextView.setVisibility(View.VISIBLE);
     }
-
 
     private int[] showtime;
 
@@ -281,10 +286,31 @@ public class GobangView extends View {
         public void onClick(View v) {
             switch (v.getId()) {
                 //如果是悔棋
-                case R.id.btn1:
+                case R.id.renren_btn1:
+                    if (mIsWin) {
+                        Toast.makeText(getContext(), "胜负已分不能悔棋", Toast.LENGTH_SHORT).show();
+                    } else if (storageArray.size() == 0) {
+                        Toast.makeText(getContext(), "开局并不能悔棋", Toast.LENGTH_SHORT).show();
+                    } else {
+                        if (storageArray.size() == 1) {
+                            storageArray.pop();
+                            mGridArray = new int[GRID_SIZE - 1][GRID_SIZE - 1];
+                            invalidate();
+                        } else {
+                            String temp = storageArray.pop();
+                            String[] temps = temp.split(":");
+
+                            int a = Integer.parseInt(temps[0]);
+                            int b = Integer.parseInt(temps[1]);
+                            mGridArray[a][b] = 0;
+                            invalidate();
+                        }
+                        wbflag = (wbflag == WHITE) ? BLACK : WHITE;
+                    }
                     break;
                 //如果是刷新
-                case R.id.btn2:
+                case R.id.renren_btn2:
+                    mIsWin = false;
                     setVisibility(View.VISIBLE);
                     mStatusTextView.invalidate();
                     init();
@@ -292,7 +318,10 @@ public class GobangView extends View {
                     for (int i = 0; i < showtime.length; i++) {
                         showtime[i] = 0;
                     }
-                    mStatusTextView.invalidate();
+                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
+                    mStatusTextView.setText("人人模式  当前时间：" + simpleDateFormat.format(new Date()));
+                    break;
+                default:
                     break;
             }
         }

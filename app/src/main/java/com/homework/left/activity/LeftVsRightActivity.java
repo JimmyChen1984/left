@@ -1,52 +1,45 @@
-package com.whale.nangua.pumpkingobang;
+package com.homework.left.activity;
 
-import android.os.Build;
+import android.app.Activity;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.whale.nangua.pumpkingobang.view.GobangView;
+import com.homework.left.R;
+import com.homework.left.view.LeftVsRightView;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MainActivity extends AppCompatActivity {
 
-    GobangView gbv;
-    TextView textView;
-    Button huiqi;
-    Button shuaxin;
-    TextView showtime;
+public class LeftVsRightActivity extends Activity {
+
+    private LeftVsRightView gbv;
+    TextView renren_textView;
+    Button renren_huiqi;
+    Button renren_shuaxin;
+    TextView renren_showtime;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        //设置沉浸式标题栏
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            getWindow().addFlags(
-                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            getWindow().addFlags(
-                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-        }
+        setContentView(R.layout.leftright_layout);
         initView();
     }
 
     private void initView() {
-        showtime = (TextView) findViewById(R.id.showtime);
-        gbv = (GobangView) this.findViewById(R.id.gobangview);
-        textView = (TextView) findViewById(R.id.text);
-        huiqi = (Button) findViewById(R.id.btn1);
-        shuaxin = (Button) findViewById(R.id.btn2);
+        renren_showtime = (TextView) findViewById(R.id.renren_showtime);
+        gbv = (LeftVsRightView)findViewById(R.id.renren_gobangview);
+        renren_textView = (TextView) findViewById(R.id.renren_text);
+        renren_huiqi = (Button) findViewById(R.id.renren_btn1);
+        renren_shuaxin = (Button) findViewById(R.id.renren_btn2);
         SimpleDateFormat simpleDateFormat = null;
         simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
-        textView.setText("当前时间：" + simpleDateFormat.format(new Date()));
-        gbv.setTextView(textView);
-        gbv.setButtons(huiqi, shuaxin);
+        renren_textView.setText("当前时间：" + simpleDateFormat.format(new Date()));
+        gbv.setTextView(renren_textView);
+        gbv.setButtons(renren_huiqi, renren_shuaxin);
         gbv.setShowTimeTextViewTime(jishitime);
         Timer timer = new Timer();
         JishiTask myTask = new JishiTask();
@@ -73,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
                     if (jishitime[2] == 24) {
                         jishitime[2]=0;
                     }
-                    showtime.setText(String.format("%02d:%02d:%02d",jishitime[2],jishitime[1],jishitime[0]));
+                    renren_showtime.setText(String.format("%02d:%02d:%02d",jishitime[2],jishitime[1],jishitime[0]));
                 }
             });
         }
